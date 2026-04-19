@@ -127,7 +127,7 @@ export default function DecisionLogForm({ onSuccess }: DecisionLogFormProps) {
       reason,
       status: 'pending',
       choices,
-      selected_choice_id: null,
+      selected_choice_id: undefined,
       type,
       tags: tags.length > 0 ? tags : undefined,
       constraints: constraints.length > 0 ? constraints : undefined,
