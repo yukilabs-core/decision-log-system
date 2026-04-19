@@ -12,6 +12,7 @@ export function useDecisionLogs() {
     userId: string,
     filter?: {
       status?: string
+      type?: string
       tags?: string[]
       search?: string
       limit?: number
@@ -20,6 +21,10 @@ export function useDecisionLogs() {
   ) => {
     setIsLoading(true)
     setError(null)
+
+    const controller = new AbortController()
+    const timeoutId = setTimeout(() => controller.abort(), 8000)
+
     try {
       let query = supabase
         .from('decision_logs')
@@ -29,6 +34,10 @@ export function useDecisionLogs() {
 
       if (filter?.status) {
         query = query.eq('status', filter.status)
+      }
+
+      if (filter?.type) {
+        query = query.eq('type', filter.type)
       }
 
       if (filter?.tags && filter.tags.length > 0) {
@@ -48,13 +57,18 @@ export function useDecisionLogs() {
       const { data, error: err, count } = await query
 
       if (err) throw err
+
+      setIsLoading(false)
       return { logs: data as DecisionLog[], total: count || 0 }
     } catch (err) {
       const message = err instanceof Error ? err.message : 'Failed to fetch logs'
       setError(message)
+      setIsLoading(false)
+      console.error('[getLogs] Error:', message)
       return { logs: [], total: 0 }
     } finally {
-      setIsLoading(false)
+      clearTimeout(timeoutId)
+      controller.abort()
     }
   }
 
@@ -83,16 +97,19 @@ export function useDecisionLogs() {
     setIsLoading(true)
     setError(null)
     try {
+      console.log('[CreateLog] Sending data:', log)
       const { data, error: err } = await supabase
         .from('decision_logs')
         .insert([log])
         .select()
         .single()
 
+      console.log('[CreateLog] Response:', { data, err })
       if (err) throw err
       return data as DecisionLog
     } catch (err) {
-      const message = err instanceof Error ? err.message : 'Failed to create log'
+      const message = err instanceof Error ? err.message : JSON.stringify(err)
+      console.error('[CreateLog] Error:', message)
       setError(message)
       return null
     } finally {

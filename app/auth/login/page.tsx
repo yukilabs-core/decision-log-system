@@ -32,7 +32,7 @@ export default function LoginPage() {
           <p className="text-sm text-gray-600 mt-1">Your decision-making journal</p>
         </div>
 
-      <div className="card">
+        <div className="card">
         {error && (
           <div className="bg-red-50 dark:bg-red-900/30 border border-red-200 dark:border-red-800 text-red-700 dark:text-red-200 px-4 py-3 rounded mb-6 text-sm">
             {error}
@@ -86,6 +86,7 @@ export default function LoginPage() {
               新規登録
             </Link>
           </p>
+        </div>
         </div>
       </div>
     </div>

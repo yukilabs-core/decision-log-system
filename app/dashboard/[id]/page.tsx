@@ -1,6 +1,6 @@
 'use client'
 
-import { useEffect, useState } from 'react'
+import { use, useEffect, useState } from 'react'
 import { useRouter } from 'next/navigation'
 import Link from 'next/link'
 import { useDecisionLogs } from '@/hooks/useDecisionLogs'
@@ -21,7 +21,8 @@ const TYPE_DISPLAY = {
   emergency: '緊急',
 }
 
-export default function DetailPage({ params }: { params: { id: string } }) {
+export default function DetailPage({ params: paramsPromise }: { params: Promise<{ id: string }> }) {
+  const params = use(paramsPromise)
   const router = useRouter()
   const { getLog, deleteLog, isLoading } = useDecisionLogs()
   const [log, setLog] = useState<DecisionLog | null>(null)
@@ -38,7 +39,7 @@ export default function DetailPage({ params }: { params: { id: string } }) {
     }
 
     fetchLog()
-  }, [params.id, getLog, router])
+  }, [params.id])
 
   const handleDelete = async () => {
     if (!window.confirm('このログを削除しますか？')) return
@@ -165,23 +166,23 @@ export default function DetailPage({ params }: { params: { id: string } }) {
                   )}
                 </div>
               </div>
-              {(choice.pros?.length > 0 || choice.cons?.length > 0) && (
+              {((choice.pros?.length ?? 0) > 0 || (choice.cons?.length ?? 0) > 0) && (
                 <div className="mt-3 space-y-2 text-sm">
-                  {choice.pros?.length > 0 && (
+                  {(choice.pros?.length ?? 0) > 0 && (
                     <div>
                       <p className="text-gray-600 font-medium">メリット：</p>
                       <ul className="list-disc list-inside text-gray-700">
-                        {choice.pros.map((pro, i) => (
+                        {choice.pros?.map((pro, i) => (
                           <li key={i}>{pro}</li>
                         ))}
                       </ul>
                     </div>
                   )}
-                  {choice.cons?.length > 0 && (
+                  {(choice.cons?.length ?? 0) > 0 && (
                     <div>
                       <p className="text-gray-600 font-medium">デメリット：</p>
                       <ul className="list-disc list-inside text-gray-700">
-                        {choice.cons.map((con, i) => (
+                        {choice.cons?.map((con, i) => (
                           <li key={i}>{con}</li>
                         ))}
                       </ul>
@@ -195,13 +196,13 @@ export default function DetailPage({ params }: { params: { id: string } }) {
       </div>
 
       {/* メタ情報 */}
-      {(log.tags?.length > 0 || log.constraints?.length > 0 || log.risks?.length > 0 || log.assumptions?.length > 0) && (
+      {((log.tags?.length ?? 0) > 0 || (log.constraints?.length ?? 0) > 0 || (log.risks?.length ?? 0) > 0 || (log.assumptions?.length ?? 0) > 0) && (
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-          {log.tags?.length > 0 && (
+          {(log.tags?.length ?? 0) > 0 && (
             <div className="bg-white rounded-lg shadow p-4">
               <h3 className="text-xs font-medium text-gray-600 uppercase mb-2">タグ</h3>
               <div className="flex flex-wrap gap-1">
-                {log.tags.map((tag, i) => (
+                {log.tags?.map((tag, i) => (
                   <span key={i} className="bg-indigo-100 text-indigo-700 text-xs px-2 py-1 rounded">
                     {tag}
                   </span>
@@ -209,31 +210,31 @@ export default function DetailPage({ params }: { params: { id: string } }) {
               </div>
             </div>
           )}
-          {log.constraints?.length > 0 && (
+          {(log.constraints?.length ?? 0) > 0 && (
             <div className="bg-white rounded-lg shadow p-4">
               <h3 className="text-xs font-medium text-gray-600 uppercase mb-2">制約条件</h3>
               <ul className="text-sm text-gray-700 space-y-1">
-                {log.constraints.map((c, i) => (
+                {log.constraints?.map((c, i) => (
                   <li key={i}>• {c}</li>
                 ))}
               </ul>
             </div>
           )}
-          {log.risks?.length > 0 && (
+          {(log.risks?.length ?? 0) > 0 && (
             <div className="bg-white rounded-lg shadow p-4">
               <h3 className="text-xs font-medium text-gray-600 uppercase mb-2">リスク</h3>
               <ul className="text-sm text-gray-700 space-y-1">
-                {log.risks.map((r, i) => (
+                {log.risks?.map((r, i) => (
                   <li key={i}>• {r}</li>
                 ))}
               </ul>
             </div>
           )}
-          {log.assumptions?.length > 0 && (
+          {(log.assumptions?.length ?? 0) > 0 && (
             <div className="bg-white rounded-lg shadow p-4">
               <h3 className="text-xs font-medium text-gray-600 uppercase mb-2">前提条件</h3>
               <ul className="text-sm text-gray-700 space-y-1">
-                {log.assumptions.map((a, i) => (
+                {log.assumptions?.map((a, i) => (
                   <li key={i}>• {a}</li>
                 ))}
               </ul>
@@ -255,13 +256,13 @@ export default function DetailPage({ params }: { params: { id: string } }) {
         </div>
       )}
 
-      {log.learning?.length > 0 && (
+      {(log.learning?.length ?? 0) > 0 && (
         <div className="bg-white rounded-lg shadow p-6">
           <h2 className="text-sm font-medium text-gray-600 uppercase tracking-wider mb-3">
             学び
           </h2>
           <ul className="list-disc list-inside space-y-2">
-            {log.learning.map((item, i) => (
+            {log.learning?.map((item, i) => (
               <li key={i} className="text-gray-900">{item}</li>
             ))}
           </ul>

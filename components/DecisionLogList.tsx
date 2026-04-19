@@ -1,14 +1,15 @@
 'use client'
 
-import { useEffect, useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import Link from 'next/link'
 import { useAuth } from '@/hooks/useAuth'
 import { useDecisionLogs } from '@/hooks/useDecisionLogs'
-import { DecisionLog, DecisionStatus } from '@/types'
+import { DecisionLog, DecisionStatus, DecisionType } from '@/types'
 
 interface DecisionLogListProps {
   filter?: {
     status?: DecisionStatus
+    type?: DecisionType
     tags?: string[]
     search?: string
   }
@@ -29,36 +30,101 @@ const TYPE_DISPLAY = {
 }
 
 export default function DecisionLogList({ filter }: DecisionLogListProps) {
-  const { user } = useAuth()
+  const { user, isLoading: authLoading } = useAuth()
   const { getLogs, isLoading } = useDecisionLogs()
   const [logs, setLogs] = useState<DecisionLog[]>([])
   const [total, setTotal] = useState(0)
   const [page, setPage] = useState(1)
+  const [loadingTimeout, setLoadingTimeout] = useState(false)
   const itemsPerPage = 20
+  const mountedRef = useRef(true)
+
+  useEffect(() => {
+    mountedRef.current = true
+    console.log('[DecisionLogList] Component mounted')
+    return () => {
+      console.log('[DecisionLogList] Component unmounted')
+      mountedRef.current = false
+    }
+  }, [])
+
+  useEffect(() => {
+    console.log('[DecisionLogList] State changed - Auth loading:', authLoading, 'User:', user?.email, 'Page:', page, 'API loading:', isLoading)
+  }, [user, authLoading, page, isLoading])
 
   useEffect(() => {
     const fetchLogs = async () => {
-      if (!user) return
+      const timestamp = new Date().toISOString()
+      console.log(`[${timestamp}] [DecisionLogList] Effect triggered - User: ${user?.email || 'null'}, Auth loading: ${authLoading}`)
 
-      const { logs: data, total: count } = await getLogs(user.id, {
-        status: filter?.status,
-        tags: filter?.tags,
-        search: filter?.search,
-        limit: itemsPerPage,
-        offset: (page - 1) * itemsPerPage,
-      })
+      if (authLoading) {
+        console.log(`[${timestamp}] [DecisionLogList] Auth still loading, skipping fetch`)
+        return
+      }
 
-      setLogs(data)
-      setTotal(count)
+      if (!user) {
+        console.log(`[${timestamp}] [DecisionLogList] No user after auth load, skipping fetch`)
+        return
+      }
+
+      console.log(`[${timestamp}] [DecisionLogList] Starting fetch for page ${page}`)
+      setLoadingTimeout(false)
+
+      // Safety timeout to prevent infinite loading
+      const timeoutId = setTimeout(() => {
+        if (mountedRef.current) {
+          console.warn(`[${timestamp}] [DecisionLogList] Fetch timeout after 5s, forcing loading state off`)
+          setLoadingTimeout(true)
+        }
+      }, 5000)
+
+      try {
+        const { logs: data, total: count } = await getLogs(user.id, {
+          status: filter?.status,
+          type: filter?.type,
+          tags: filter?.tags,
+          search: filter?.search,
+          limit: itemsPerPage,
+          offset: (page - 1) * itemsPerPage,
+        })
+
+        if (mountedRef.current) {
+          console.log(`[${timestamp}] [DecisionLogList] Fetch completed - Got ${data.length} items, Total: ${count}`)
+          setLogs(data)
+          setTotal(count)
+          setLoadingTimeout(false)
+        }
+      } catch (err) {
+        console.error(`[${timestamp}] [DecisionLogList] Fetch failed:`, err)
+        if (mountedRef.current) {
+          setLoadingTimeout(true)
+        }
+      } finally {
+        clearTimeout(timeoutId)
+      }
     }
 
     fetchLogs()
-  }, [user, filter, page, getLogs])
+  }, [user, authLoading, filter, page])
 
-  if (isLoading) {
+  if (isLoading && !loadingTimeout) {
     return (
       <div className="flex justify-center py-8">
         <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-indigo-600"></div>
+      </div>
+    )
+  }
+
+  if (loadingTimeout && !logs.length) {
+    return (
+      <div className="bg-white rounded-lg shadow p-8 text-center">
+        <p className="text-red-600 mb-4">読み込みがタイムアウトしました</p>
+        <button
+          onClick={() => window.location.reload()}
+          className="px-4 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700"
+        >
+          ページを再読み込み
+        </button>
       </div>
     )
   }

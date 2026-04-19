@@ -1,12 +1,13 @@
 'use client'
 
-import { useEffect, useState } from 'react'
+import { use, useEffect, useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { useDecisionLogs } from '@/hooks/useDecisionLogs'
 import DecisionLogForm from '@/components/DecisionLogForm'
 import { DecisionLog } from '@/types'
 
-export default function EditPage({ params }: { params: { id: string } }) {
+export default function EditPage({ params: paramsPromise }: { params: Promise<{ id: string }> }) {
+  const params = use(paramsPromise)
   const router = useRouter()
   const { getLog, isLoading } = useDecisionLogs()
   const [log, setLog] = useState<DecisionLog | null>(null)
