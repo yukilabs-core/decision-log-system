@@ -1,0 +1,30 @@
+{
+  "name": "decision-log-system",
+  "version": 2,
+  "buildCommand": "pnpm run build",
+  "devCommand": "pnpm run dev",
+  "installCommand": "pnpm install --frozen-lockfile",
+  "framework": "nextjs",
+  "regions": ["icn1"],
+  "env": {
+    "NODE_ENV": "production"
+  },
+  "envPrefix": "NEXT_PUBLIC_",
+  "headers": [
+    {
+      "source": "/api/:path*",
+      "headers": [
+        {
+          "key": "Cache-Control",
+          "value": "max-age=0, s-maxage=60, stale-while-revalidate=3600"
+        }
+      ]
+    }
+  ],
+  "rewrites": [
+    {
+      "source": "/(.*)",
+      "destination": "/"
+    }
+  ]
+}
